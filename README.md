@@ -90,6 +90,9 @@
      Finder <-- Spring Boot (open 명령 실행)
      ```
 
+8. 사용자
+    - `Electron/Tauri + vue` Desktop App 
+
 #### 데이터 흐름 (시나리오 예시)
 ```
 1. 사용자가 ~/Desktop/archive에 "random.jpg" 넣음
