@@ -2,49 +2,115 @@
 99duuk Archive
 
 ---
+# 1차 설계
+목표
+시스템 개요
+[사용자] --> [로컬 폴더: ~/Desktop/archive]
+                     |
+                     v
+[Spring Boot] <--> [Python (MobileNetV2 or YOLO)] <--> [Kafka (Optional)]
+         |                       |
+         v                       v
+[Elasticsearch]       [대분류 폴더: ~/Desktop/archive/jeans, boots 등]
+         |
+         v
+[검색 결과] --> [Finder]
+컴포넌트 설명
+로컬 폴더 (~/Desktop/archive)
+
+네가 이미지를 넣는 시작점.
+예: random.jpg, screenshot.png 등.
+Spring Boot
+
+역할: 시스템의 중심 허브.
+기능:
+WatchService로 폴더 감지.
+Python 모델 호출 (또는 Kafka로 통신).
+태그 받아서 파일 이동 + ES 저장.
+연결:
+Spring Boot --> Python (이미지 분석 요청)
+Spring Boot <-- Python (태그 반환)
+Spring Boot --> Elasticsearch (태그/경로 저장)
+Spring Boot --> 대분류 폴더 (파일 이동)
+Python (MobileNetV2 or YOLO)
+
+역할: 이미지 분석으로 태그 생성.
+MobileNetV2:
+다중 레이블 튜닝: [jeans, boots, man].
+YOLO (대안):
+객체 탐지: "jeans", "boots" 등 위치 탐지 후 태그화.
+약간 무거움, 나중에 확장 가능.
+연결:
+Python <-- Spring Boot (이미지 경로 받기)
+Python --> Spring Boot (태그 전달)
+Python --> Kafka (옵션, 태그 전달)
+Kafka (Optional, 공부용)
+
+역할: Spring Boot와 Python 간 비동기 통신.
+흐름:
+Python --> Kafka (태그 발행)
+Spring Boot <-- Kafka (태그 구독)
+특징: 조잡해도 학습 목적이면 OK.
+Elasticsearch
+
+역할: 태그와 파일 경로 저장, 검색 제공.
+데이터 예:
+{
+  "path": "~/Desktop/archive/jeans/random.jpg",
+  "tags": ["jeans", "boots", "man"]
+}
+연결:
+Elasticsearch <-- Spring Boot (데이터 저장)
+Elasticsearch --> Spring Boot (검색 결과 반환)
+대분류 폴더
+
+역할: 태그 기반으로 파일 정리.
+예: ~/Desktop/archive/jeans, ~/Desktop/archive/webtoon.
+흐름:
+대분류 폴더 <-- Spring Boot (파일 이동)
+Finder
+
+역할: 검색 결과로 파일 열기.
+연결:
+Finder <-- Spring Boot (open 명령 실행)
+사용자
+
+Electron/Tauri + vue Desktop App
+데이터 흐름 (시나리오 예시)
+1. 사용자가 ~/Desktop/archive에 "random.jpg" 넣음
+   |
+2. Spring Boot가 감지
+   |
+3. Spring Boot --> Python: "random.jpg" 전달
+   |
+4. Python (MobileNetV2): 이미지 분석 --> [jeans, boots] 반환
+   |        (Kafka 옵션: Python --> Kafka --> Spring Boot)
+   v
+5. Spring Boot:
+   - [jeans]로 ~/Desktop/archive/jeans 폴더 생성 후 파일 이동
+   - [jeans, boots]와 경로를 Elasticsearch에 저장
+   |
+6. 사용자가 ES에서 "boots" 검색
+   |
+7. Spring Boot --> ES: 쿼리 날림 --> 경로 반환
+   |
+8. Spring Boot --> Finder: 파일 열기
+아키텍처 특징
+단순함: 이미지 넣으면 "알잘딱"으로 대분류 + 검색 가능.
+조잡함 허용: 모델이 70~80%만 맞춰도 OK, Kafka 없어도 동작.
+학습 포인트:
+MobileNetV2 튜닝 (or YOLO).
+Kafka 통신 (공부용).
+ES 토크나이징/검색.
+확장성: 나중에 Vue.js 웹 추가, YOLO로 업그레이드 가능.
 
 ---
-
-### Python Tagger 기능 상세 정리
-#### 1. `main.py`
-- **목적**: 시스템 시작점, 컴포넌트 초기화 및 실행 흐름 제어.
-- **기능**:
-  - `DirectoryWatcher`로 입력 폴더 감시.
-  - `process_image`로 새 이미지 처리 (분석 → 이동 → Kafka 발행).
-  - 전역 객체 관리 (`tagger`, `file_manager`, `kafka_producer`).
-- **동작**: Python이 `~/Desktop/duukrchive`를 감시하며 Kafka로 데이터 전달 시작.
-
-#### 2. `TagProducer` (`interface/kafka_producer.py`)
-- **목적**: Kafka로 태그 데이터 발행.
-- **기능**:
-  - JSON 메시지 생성 (예: `{"file_path": "...", "primary_tag": "vehicle", "tags": ["white", "bicycle"], "timestamp": "..."}`).
-  - `image_tags` 토픽으로 발행.
-- **동작**: Python에서 분석된 태그를 Kafka로 전송, Kafka Connect가 이를 받아 ES로 전달.
-
-#### 3. `FileManager` (`core/file_manager.py`)
-- **목적**: 태그 기반 파일 이동.
-- **기능**:
-  - `primary_tag`로 디렉터리 생성 (예: `~/Desktop/duukrchive/vehicle`).
-  - 파일 이동 및 새 경로 반환.
-- **동작**: Python이 대분류 폴더로 파일을 정리.
-
-#### 4. `ModelLoader` (`models/model_loader.py`)
-- **목적**: YOLO 모델 로드 및 디바이스 관리.
-- **기능**:
-  - MPS(Apple Silicon), CPU 등 적합한 디바이스 선택.
-  - YOLOv8 모델 로드.
-- **동작**: Python에서 모델을 준비해 `ImageTagger`에 제공.
-
-#### 5. `ImageTagger` (`core/tagger.py`)
-- **목적**: 이미지 분석 및 태그 생성.
-- **기능**:
-  - YOLO로 객체 탐지 (예: "human", "bicycle").
-  - 신뢰도(confidence) 기반 대분류(`primary_tag`) 선택.
-  - 색상 분석으로 추가 태그 생성 (예: "white").
-  - `primary_tag`와 `tags` 반환.
-- **동작**: Python이 이미지를 분석해 태그를 생성, 이후 파일 이동과 Kafka 발행에 사용.
-
 ---
+
+#  1차 변경
+---
+스프링을 제외시키기로 했음.
+
 
 ### 전체 흐름에서 동작 방식
 1. **Python (YOLO)**:
@@ -62,4 +128,4 @@
 
 ---
 
-이렇게 정리하면 네 시스템의 현재 모습과 동작이 명확해질 거야! 추가로 보완하고 싶거나 다른 질문 있으면 언제든 말해줘. 잘했어! 😊
+
