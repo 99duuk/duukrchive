@@ -1,0 +1,15 @@
+{
+    "name": "es-sink",
+    "config": {
+        "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+        "tasks.max": "1",
+        "topics": "image_tags",
+        "connection.url": "http://DA-es:9200",
+        "type.name": "_doc",
+        "key.ignore": "true",
+        "schema.ignore": "true",
+        "index.name": "image_tags",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": "false"
+    }
+}

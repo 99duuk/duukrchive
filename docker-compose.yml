@@ -53,7 +53,7 @@ services:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - TZ=Asia/Seoul
-      - xpack.security.enabled=false # 보안 비활성화
+      - xpack.security.enabled=false
     volumes:
       - ./docker-data/esdata:/usr/share/elasticsearch/data
     ports:
@@ -72,56 +72,34 @@ services:
       - es
     networks:
       - da_net
-#
-#
-#  mariadb:
-#    image: mariadb:latest
-#    container_name: DA-mariadb
-#    restart: unless-stopped
-#    ports:
-#      - "9906:3306"
-#    environment:
-#      MYSQL_ROOT_PASSWORD: "1234"
-#      MYSQL_DATABASE: "duukarchive"
-#      MYSQL_USER: "99duuk"
-#      MYSQL_PASSWORD: "1234"
-#    volumes:
-#      - ./docker-data/mariadb:/var/lib/mysql
-#    networks:
-#      - da_net
-#
-#  redis:
-#    image: redis:latest
-#    container_name: DA-redis
-#    restart: unless-stopped
-#    ports:
-#      - "6379:6379"
-#    volumes:
-#      - ./docker-data/redis:/data
-#    command: ["redis-server", "--appendonly", "yes", "--requirepass", "1234"]
-#    networks:
-#      - da_net
-#
-#
-#  minio:
-#    image: quay.io/minio/minio
-#    container_name: DA-minio
-#    ports:
-#      - "9000:9000"
-#      - "9001:9001"
-#    environment:
-#      MINIO_ROOT_USER: admin
-#      MINIO_ROOT_PASSWORD: admin123
-#    volumes:
-#      - ./docker-data/minio:/data
-#    command: server --console-address ":9001" /data
-#    networks:
-#      - da_net
 
-#volumes:
-#  esdata:
-#  logstash_data:
-#  mysqldata:
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:7.3.0
+    container_name: DA-kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:19092" # 내부 네트워크로 kafka 연결
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_GROUP_ID: "connect-group"
+      CONNECT_CONFIG_STORAGE_TOPIC: "connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "connect-status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1" # 내부 토픽 복제 계수 설정 변경
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+    depends_on:
+      - kafka
+      - es
+    volumes:
+      - ./docker-data/kafka-connect:/usr/share/confluent-hub-components
+    networks:
+      - da_net
 
-#networks:
-#  wb-net:
+volumes:
+  esdata:
