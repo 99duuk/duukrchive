@@ -141,11 +141,11 @@
 ---
 스프링을 제외시키기로 했음.
 ![__](https://github.com/user-attachments/assets/16bff945-be51-4d70-ada4-cbc91486cb0a)
-Python (duukrchiveTagger): 모든 로직의 중심. 디렉터리 감시, 이미지 분석, 태그 생성, 파일 이동, Kafka 발행 수행.
-Kafka: image_tags 토픽으로 태그 데이터를 비동기 전달.
-Kafka Connect: image_tags 토픽을 읽어 ES로 싱크.
-Elasticsearch: 태그와 경로 저장, 검색 가능.
-로컬 스토리지: 입력 폴더와 대분류 폴더로 파일 관리.
+- Python (duukrchiveTagger): 모든 로직의 중심. 디렉터리 감시, 이미지 분석, 태그 생성, 파일 이동, Kafka 발행 수행.
+- Kafka: image_tags 토픽으로 태그 데이터를 비동기 전달.
+- Kafka Connect: image_tags 토픽을 읽어 ES로 싱크.
+- Elasticsearch: 태그와 경로 저장, 검색 가능.
+- 로컬 스토리지: 입력 폴더와 대분류 폴더로 파일 관리.
 
 ### 전체 흐름에서 동작 방식
 1. **Python (YOLO)**:
