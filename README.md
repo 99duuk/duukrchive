@@ -167,3 +167,27 @@
 2. **Kafka Connect 추가**
   - Kafka Connect 컴포넌트를 추가하고, Elasticsearch Sink Connector로 Kafka에서 ES로 데이터를 싱크하는 역할 명시.
   - ImageTagsTopic --> ESSinkConnector --> ElasticSearch로 흐름 연결.
+
+--- 
+``` json 
+TODO
+  1. 중복 파일 제거 방안 (현재 동일 파일 여러번 테스트 시 es에 동일하게 쌓임 (36 * 3 = 108)
+
+s" : {
+    "total" : 1,
+    "successful" : 1,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : {
+      "value" : 108,
+      "relation" : "eq"
+    },
+    "max_score" : 1.0,
+    "hits" : [
+      {
+        "_index" : "image_tags",
+        "_type" : "_doc",
+        "_id" : "image_tags+0+0
+```
