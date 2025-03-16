@@ -141,7 +141,11 @@
 ---
 스프링을 제외시키기로 했음.
 ![__](https://github.com/user-attachments/assets/16bff945-be51-4d70-ada4-cbc91486cb0a)
-
+Python (duukrchiveTagger): 모든 로직의 중심. 디렉터리 감시, 이미지 분석, 태그 생성, 파일 이동, Kafka 발행 수행.
+Kafka: image_tags 토픽으로 태그 데이터를 비동기 전달.
+Kafka Connect: image_tags 토픽을 읽어 ES로 싱크.
+Elasticsearch: 태그와 경로 저장, 검색 가능.
+로컬 스토리지: 입력 폴더와 대분류 폴더로 파일 관리.
 
 ### 전체 흐름에서 동작 방식
 1. **Python (YOLO)**:
@@ -158,3 +162,8 @@
    - 태그와 경로를 저장, 검색 쿼리로 결과 제공.
 
 ---
+### 변경사항 
+1. **Spring Boot 제거**
+2. **Kafka Connect 추가**
+  - Kafka Connect 컴포넌트를 추가하고, Elasticsearch Sink Connector로 Kafka에서 ES로 데이터를 싱크하는 역할 명시.
+  - ImageTagsTopic --> ESSinkConnector --> ElasticSearch로 흐름 연결.
