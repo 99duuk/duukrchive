@@ -140,6 +140,7 @@
 #  1차 변경
 ---
 스프링을 제외시키기로 했음.
+![__](https://github.com/user-attachments/assets/16bff945-be51-4d70-ada4-cbc91486cb0a)
 
 
 ### 전체 흐름에서 동작 방식
