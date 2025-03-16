@@ -1,52 +1,55 @@
-# Compiled class file
+#  Java 및 Gradle 관련 파일 무시
 *.class
-
-# Log file
-# 일반 로그는 제외하고 Java crash 로그만 무시하도록 세분화
-!*.log
-hs_err_pid*
-replay_pid*
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
-*.nar
 *.ear
+*.nar
 *.zip
 *.tar.gz
 *.rar
 
-# Gradle build files and outputs
-build/
+# Gradle 관련 빌드 아티팩트 무시
+/build/
 .gradle/
 *.iml
 *.ipr
 *.iws
 
-# IntelliJ IDEA specific files
+#  IntelliJ IDEA 관련 파일 무시
 .idea/
-*.log # IntelliJ 로그 제외 (필요 시 주석 해제)
+*.log  # IntelliJ 로그 파일 제외 (필요 시 주석 해제)
 
-# OS generated files
+#  운영 체제(OS)에서 자동 생성되는 파일 무시
 .DS_Store
 Thumbs.db
 
-# Python related files (if used)
-__pycache__/
-*.py[cod]
-*$py.class
+#  J2ME(Mobile Tools for Java) 관련 파일 무시
+.mtj.tmp/
 
-# Virtual machine crash logs (specific to desktop)
-~/Desktop/hs_err_pid*
+#  Virtual machine crash logs (Java 관련 크래시 로그만 유지)
+!*.log  # 일반 로그 포함 (필요하면 주석 해제)
+hs_err_pid*
+replay_pid*
 
-# Test output
+#  IDE 설정 관련 파일 무시
+.vscode/
+*.swp  # Vim swap 파일
+
+#  Docker 관련
+docker-data/
+docker-data/*  # 전체 무시 (필요 시 특정 파일만 제외 가능)
+!docker-compose.yml  # Docker Compose 파일은 유지
+
+#  ElasticSearch / Kafka / Zookeeper 데이터 무시
+docker-data/esdata/
+docker-data/kafka/
+docker-data/zookeeper/
+
+#  테스트 관련 파일 무시
 /target/
 
-# Application-specific logs (필요 시 조정)
-# !src/main/resources/application.log (예: 애플리케이션 로그 유지하려면)
+#  애플리케이션 로그 파일 관리
+# !src/main/resources/application.log  # 애플리케이션 로그 유지하려면 주석 해제
+
+#  특정 폴더 제외 필요하면 아래 추가
+# !important-folder/  # 특정 폴더는 무시하지 않도록 설정 가능

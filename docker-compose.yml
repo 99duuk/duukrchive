@@ -1,32 +1,21 @@
-version: '3.8'
+networks:
+  da_net:
+    name: da-net
+    driver: bridge
+
 services:
-#  es:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
-#    container_name: WB-es
-#    environment:
-#      - discovery.type=single-node
-#      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-#      - TZ=Asia/Seoul  # 추가된 시간대 설정
-#    volumes:
-#      - esdata:/usr/share/elasticsearch/data
-#    ports:
-#      - "9200:9200"
-#    networks:
-#      - wb-net
-
-
-#  kibana:
-#    image: docker.elastic.co/kibana/kibana:7.17.10
-#    container_name: WB-kibana
-#    environment:
-#      - ELASTICSEARCH_HOSTS=http://WB-es:9200
-#    ports:
-#      - "5601:5601"
-#    networks:
-#      - wb-net
-
-
-
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: DA-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - ./docker-data/zookeeper:/var/lib/zookeeper
+    networks:
+      - da_net
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
@@ -38,7 +27,7 @@ services:
     environment:
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_BROKER_ID: 1
@@ -55,37 +44,63 @@ services:
     volumes:
       - ./docker-data/kafka:/var/lib/kafka
     networks:
-      - da-network
+      - da_net
 
-
-
-  mariadb:
-    image: mariadb:latest
-    container_name: DA-mariadb
-    restart: unless-stopped
-    ports:
-      - "9906:3306"
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: DA-es
     environment:
-      MYSQL_ROOT_PASSWORD: "1234"
-      MYSQL_DATABASE: "duukarchive"
-      MYSQL_USER: "99duuk"
-      MYSQL_PASSWORD: "1234"
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - TZ=Asia/Seoul
+      - xpack.security.enabled=false # 보안 비활성화
     volumes:
-      - ./docker-data/mariadb:/var/lib/mysql
-    networks:
-      - da-network
-
-  redis:
-    image: redis:latest
-    container_name: DA-redis
-    restart: unless-stopped
+      - ./docker-data/esdata:/usr/share/elasticsearch/data
     ports:
-      - "6379:6379"
-    volumes:
-      - ./docker-data/redis:/data
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "1234"]
+      - "9200:9200"
     networks:
-      - da-network
+      - da_net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.10
+    container_name: DA-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://DA-es:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - es
+    networks:
+      - da_net
+#
+#
+#  mariadb:
+#    image: mariadb:latest
+#    container_name: DA-mariadb
+#    restart: unless-stopped
+#    ports:
+#      - "9906:3306"
+#    environment:
+#      MYSQL_ROOT_PASSWORD: "1234"
+#      MYSQL_DATABASE: "duukarchive"
+#      MYSQL_USER: "99duuk"
+#      MYSQL_PASSWORD: "1234"
+#    volumes:
+#      - ./docker-data/mariadb:/var/lib/mysql
+#    networks:
+#      - da_net
+#
+#  redis:
+#    image: redis:latest
+#    container_name: DA-redis
+#    restart: unless-stopped
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - ./docker-data/redis:/data
+#    command: ["redis-server", "--appendonly", "yes", "--requirepass", "1234"]
+#    networks:
+#      - da_net
 #
 #
 #  minio:
@@ -101,12 +116,12 @@ services:
 #      - ./docker-data/minio:/data
 #    command: server --console-address ":9001" /data
 #    networks:
-#      - da-network
+#      - da_net
 
-volumes:
+#volumes:
 #  esdata:
 #  logstash_data:
 #  mysqldata:
 
-networks:
-  wb-net:
+#networks:
+#  wb-net:
